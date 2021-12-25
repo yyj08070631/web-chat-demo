@@ -76,7 +76,6 @@ const app = new Vue({
     dateFormat: v => new Intl.DateTimeFormat('zh-cn', { dateStyle: 'short',timeStyle: 'short' }).format(v)
   },
   created () {
-    // this.login()
   },
   mounted () {
     this.$refs.nameInput.focus()
