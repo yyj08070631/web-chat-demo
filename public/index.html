@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <div v-if="!userId" class="login">
+      <div class="login-title">请输入你的名字</div>
+      <div class="login-input">
+        <input v-model="userName"
+          type="text"
+          maxlength="10"
+          ref="nameInput"
+          @keyup.enter="login">
+      </div>
+    </div>
+    <div v-else class="dialog">
+      <div class="msgs">
+        <div v-for="(v, k) in msgs"
+          :class="{ 'msg--mine': v.id === userId }"
+          :key="k"
+          class="msg">
+          <div class="ts">{{ v.createTime | dateFormat }}</div>
+          <div class="text">{{ `${v.name}：${v.message}` }}</div>
+        </div>
+      </div>
+      <div class="input">
+        <input v-model="text" type="text" @keyup.enter="send">
+        <button @click="send">发送</button>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
