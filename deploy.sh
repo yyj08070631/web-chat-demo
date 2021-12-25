@@ -12,4 +12,4 @@ git add --all
 git commit -m "update"
 
 # 推送到远程仓库
-git push --force origin master
+git push --force origin main
