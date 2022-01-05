@@ -26,19 +26,19 @@ class Server {
     this.userMap = new Map()
   }
   messageHandler (message, { id, name }) {
-    const json = t.JSONParse(message)
+    const { status, data, ackId } = t.JSONParse(message)
     const fns = {
       '000': () => {
         const { ws } = this.userMap.get(id)
-        const data = { id, name, message: json.data, createTime: Date.now() }
-        this.msgs.push(data)
+        const msg = { id, ackId, name, message: data, createTime: Date.now() }
+        this.msgs.push(msg)
         // 响应
-        ws.send(t.JSONStringify({ code: 0, data, status: '000' }))
+        ws.send(t.JSONStringify({ code: 0, data: msg, status: '000' }))
         // 广播
-        this.broadcast(data)
+        this.broadcast(msg)
       },
     }
-    const fn = fns[json.status] || (() => {})
+    const fn = fns[status] || (() => {})
     fn()
   }
   broadcast (data) {

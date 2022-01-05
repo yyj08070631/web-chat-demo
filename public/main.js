@@ -14,6 +14,11 @@ const JSONStringify = obj => {
   return res
 }
 
+// send 应答监听 map
+let ackMap = new Map()
+// send 应答监听的 id 累加值标记
+let ackIdAccu = -1
+
 const app = new Vue({
   el: '#app',
   data: {
@@ -56,20 +61,33 @@ const app = new Vue({
         const fns = {
           '000': () => {
             log(`${data.name} 发送了 ${data.message} 响应`)
+            // 处理发送回调
+            const ack = ackMap.get(data.ackId) || {}
+            log(data)
+            ack.cb && ack.cb(ack.data, { code, data, status })
           },
           '000000': () => {
-            this.msgs.push(data)
             log(`${data.name} 发送了 ${data.message}`)
+            this.msgs.push(data)
           },
         }
         const fn = fns[status] || (() => {})
         fn()
       });
     },
-    send () {
+    send (cb /* (req, res) => {} */) {
+      const ackId = ++ackIdAccu
       const data = { status: '000', data: this.text }
-      this.ws.send(JSONStringify(data))
+
+      this.ws.send(JSONStringify({ ackId, ...data }))
+      // 注册发送回调，需要发送接收一一对应，因此使用一个递增 id 记录
+      ackMap.set(ackId, { cb, data })
       this.text = ''
+    },
+    sendAndLog () {
+      this.send((req, res) => {
+        log('发送响应', req, res)
+      })
     }
   },
   filters: {
