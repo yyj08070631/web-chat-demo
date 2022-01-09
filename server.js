@@ -4,7 +4,6 @@ const app = express();
 const path = require('path');
 const createServer = require('http').createServer;
 const WebSocketServer = require('ws').WebSocketServer
-const parse = require('url').parse
 const session = require('express-session')
 const uuid = require('uuid')
 const bodyParser = require('body-parser')
@@ -33,7 +32,7 @@ class Server {
         const msg = { id, ackId, name, message: data, createTime: Date.now() }
         this.msgs.push(msg)
         // 响应
-        ws.send(t.JSONStringify({ code: 0, data: msg, status: '000' }))
+        ws.send(t.JSONStringify({ data: msg, status: '000' }))
         // 广播
         this.broadcast(msg)
       },
@@ -43,7 +42,7 @@ class Server {
   }
   broadcast (data) {
     this.userMap.forEach(({ ws }, userId) => {
-      ws.send(t.JSONStringify({ code: 0, data, status: '000000' }))
+      ws.send(t.JSONStringify({ data, status: '000000' }))
     })
   }
   initExpressServer () {
@@ -78,20 +77,33 @@ class Server {
         response.send({ code: 0, message: 'session 已销毁' });
       });
     });
+    // 轮询
+    app.get('/polling', (request, response) => {
+      const { ws } = this.userMap.get(request.session.user.id);
+      // 25s 正常断开连接，等待客户端重连
+      // 监听到
+    
+      t.log('Destroying session');
+      request.session.destroy(() => {
+        if (ws) ws.close();
+    
+        response.send({ code: 0, message: 'session 已销毁' });
+      });
+    });
   }
   initWss () {
     // ws 连接
     this.wss.on('connection', (ws, request, client) => {
-      const user = request.session.user;
+      const { id, name } = request.session.user;
 
-      this.userMap.set(user.id, { ...user, ws });
+      this.userMap.set(id, { id, name, ws });
     
       ws.on('message', message => {
-        this.messageHandler(message, user)
-        console.log(`接到 ${user.name} 的消息：${message}`);
+        this.messageHandler(message, { id, name })
+        t.log(`接到 ${name} 的消息：${message}`);
       });
       ws.on('close', () => {
-        this.userMap.delete(user.id);
+        this.userMap.delete(id);
       });
     });
     // ws 协议升级

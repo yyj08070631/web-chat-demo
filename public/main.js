@@ -18,6 +18,8 @@ const JSONStringify = obj => {
 let ackMap = new Map()
 // send 应答监听的 id 累加值标记
 let ackIdAccu = -1
+// pollingInterval
+const pollingInterval = 25000
 
 const app = new Vue({
   el: '#app',
@@ -56,15 +58,15 @@ const app = new Vue({
       });
       // Listen for messages
       this.ws.addEventListener('message', event => {
-        const { code, data, status } = JSONParse(event.data)
-        log(code, data, status)
+        const { data, status } = JSONParse(event.data)
+        log(data, status)
         const fns = {
           '000': () => {
             log(`${data.name} 发送了 ${data.message} 响应`)
             // 处理发送回调
             const ack = ackMap.get(data.ackId) || {}
             log(data)
-            ack.cb && ack.cb(ack.data, { code, data, status })
+            ack.cb && ack.cb(ack.data, { data, status })
           },
           '000000': () => {
             log(`${data.name} 发送了 ${data.message}`)
@@ -74,6 +76,19 @@ const app = new Vue({
         const fn = fns[status] || (() => {})
         fn()
       });
+    },
+    // 初始化长轮询连接
+    initPolling () {
+      axios.get('/polling', {
+        params: {}
+      }).then(({ data: { code, data, status } }) => {
+        // 返回了消息，走正常信息处理，重新轮询
+        // pollingInterval 结束 server 断开连接，重新轮询
+        // ws 已连接，断开连接，后续使用 ws 通信
+        if (code === 0) {
+        } else if (code === 1) {
+        } else if (code === 2) {}
+      })
     },
     send (cb /* (req, res) => {} */) {
       const ackId = ++ackIdAccu
